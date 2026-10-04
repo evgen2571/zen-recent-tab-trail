@@ -10,7 +10,7 @@ Real Zen 1.23b captures with the Purple preset and Bar + tint:
 
 ## What it does
 
-- Highlights up to 1–20 previously visited tabs.
+- Highlights up to 20 previously visited tabs, configurable from 1 to 20.
 - Follows actual tab activation, including mouse and keyboard navigation.
 - Works with workspaces, folders, pinned tabs, and Essentials.
 - Keeps a separate trail in each window, including private windows.
@@ -26,23 +26,26 @@ Keep your folders and tab positions while seeing where you were just working.
 Requires Zen Browser, [Sine 2.3.3 or later](https://github.com/sineorg/docs/blob/main/src/installation.md),
 and permission for unofficial userChrome JavaScript.
 
-For this unpublished repository:
+### Sine
 
-1. Clone or download the repository. Start Zen once after installing Sine.
-2. Find **Profile Folder** in `about:support`, then close all Zen windows using it.
-3. With Node.js 22+ installed, run from the checkout:
+In **Sine Mods**, use **Add your own locally from a GitHub repo** and enter:
 
-   ```sh
-   node tools/install-local.mjs "/absolute/path/to/Zen/profile"
-   ```
+```text
+https://github.com/evgen2571/zen-recent-tab-trail
+```
 
-4. Start Zen. In **Settings → Sine Mods → Sine settings**, allow JavaScript from
-   unofficial sources and enable **Recent Tab Trail**. If needed, clear the startup
-   cache from `about:support` and restart.
+In **Sine settings**, allow JavaScript from unofficial sources, then enable
+**Recent Tab Trail** after installation.
 
-Once the repository is public, its GitHub URL can be installed through Sine’s
-**Add your own locally from a GitHub repo** field. It is not yet in the marketplace.
-See [installation details](VERIFICATION.md#local-and-public-installation-details).
+### Development / offline installation
+
+With Node.js 22+, use the bundled installer from the checkout after closing Zen:
+
+```sh
+node tools/install-local.mjs "/absolute/path/to/Zen/profile"
+```
+
+Use an initialized Sine profile. See [installation details](VERIFICATION.md#development--offline-installation).
 
 ## Customization
 
@@ -85,13 +88,10 @@ dependencies are required. Firefox compatibility is not claimed.
 - Very light or dark custom colors can be faint against a matching sidebar.
 - Windows/macOS, third-party themes, and native drag/audio/container combinations
   still need manual visual checks. Recency is supplementary to native focus and selection.
-- Sine 2.3.3 has a condition-observer typo that can produce a Sine console error.
-  A small compatibility stylesheet keeps its native custom-color field conditional;
-  no custom settings UI is added.
 
 ## Development
 
-Version **0.2.1** remains pre-release. With Node.js 22+:
+With Node.js 22+:
 
 ```sh
 node --check recent-tab-trail.uc.js
