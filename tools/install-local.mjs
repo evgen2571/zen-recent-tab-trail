@@ -19,8 +19,9 @@ async function install() {
     throw new Error('Sine mods.json must contain an object; no files were changed.');
   }
   const theme = JSON.parse(await readFile(join(source, 'theme.json'), 'utf8'));
-  const files = ['theme.json', 'preferences.json', 'chrome.css', 'recent-tab-trail.uc.js',
-    'README.md', 'LICENSE', 'VERIFICATION.md', 'assets/light.png', 'assets/dark.png'];
+  const files = ['theme.json', 'preferences.json', 'chrome.css', 'content.css', 'recent-tab-trail.uc.js',
+    'README.md', 'LICENSE', 'VERIFICATION.md', 'assets/light.png', 'assets/dark.png', 'assets/light-outline.png', 'assets/dark-outline.png',
+    'assets/light-fill.png', 'assets/dark-fill.png'];
   // Validate every input before touching the profile.
   for (const file of files) await access(join(source, file));
   const backup = `${registry}.rtt-backup-${Date.now()}-${process.pid}`;

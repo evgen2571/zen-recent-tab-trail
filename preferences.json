@@ -1,5 +1,9 @@
 [
   {
+    "type": "separator",
+    "label": "Recency"
+  },
+  {
     "type": "dropdown",
     "property": "recent-tab-trail.count",
     "label": "Number of recent tabs",
@@ -14,26 +18,13 @@
   },
   {
     "type": "dropdown",
-    "property": "recent-tab-trail.style",
-    "label": "Indicator style",
-    "defaultValue": "both",
+    "property": "recent-tab-trail.workspace",
+    "label": "Workspace history",
+    "defaultValue": "current",
     "placeholder": false,
     "options": [
-      { "label": "Bar + subtle background", "value": "both" },
-      { "label": "Bar", "value": "bar" },
-      { "label": "Background", "value": "background" }
-    ]
-  },
-  {
-    "type": "dropdown",
-    "property": "recent-tab-trail.strength",
-    "label": "Indicator strength",
-    "defaultValue": "normal",
-    "placeholder": false,
-    "options": [
-      { "label": "Subtle", "value": "subtle" },
-      { "label": "Normal", "value": "normal" },
-      { "label": "Strong", "value": "strong" }
+      { "label": "Current workspace", "value": "current" },
+      { "label": "Global", "value": "global" }
     ]
   },
   {
@@ -49,14 +40,59 @@
     "defaultValue": true
   },
   {
+    "type": "separator",
+    "label": "Appearance"
+  },
+  {
     "type": "dropdown",
-    "property": "recent-tab-trail.workspace",
-    "label": "Workspace history",
-    "defaultValue": "current",
+    "property": "recent-tab-trail.style",
+    "label": "Indicator style",
+    "defaultValue": "both",
     "placeholder": false,
     "options": [
-      { "label": "Current workspace", "value": "current" },
-      { "label": "Global", "value": "global" }
+      { "label": "Bar + tint", "value": "both" },
+      { "label": "Bar only", "value": "bar" },
+      { "label": "Outline", "value": "outline" },
+      { "label": "Tint", "value": "background" },
+      { "label": "Solid fill", "value": "fill" }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "recent-tab-trail.color-source",
+    "label": "Color",
+    "defaultValue": "theme",
+    "placeholder": false,
+    "options": [
+      { "label": "Zen accent", "value": "theme" },
+      { "label": "Custom", "value": "custom" }
+    ]
+  },
+  {
+    "type": "string",
+    "property": "recent-tab-trail.custom-color",
+    "label": "Custom color",
+    "defaultValue": "#7c6cff",
+    "placeholder": "#7c6cff",
+    "conditions": [
+      {
+        "if": {
+          "property": "recent-tab-trail.color-source",
+          "value": "custom"
+        }
+      }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "recent-tab-trail.strength",
+    "label": "Intensity",
+    "defaultValue": "normal",
+    "placeholder": false,
+    "options": [
+      { "label": "Subtle", "value": "subtle" },
+      { "label": "Normal", "value": "normal" },
+      { "label": "Strong", "value": "strong" }
     ]
   }
 ]

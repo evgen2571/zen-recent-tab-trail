@@ -9,6 +9,12 @@ class Element extends EventTarget {
   constructor(attrs = {}) {
     super();
     this.attrs = new Map(Object.entries(attrs));
+    this.style = {
+      values: new Map(),
+      setProperty(k, v) { this.values.set(k, v); },
+      getPropertyValue(k) { return this.values.get(k) ?? ""; },
+      removeProperty(k) { this.values.delete(k); },
+    };
     this.isConnected = true;
     this.hidden = false;
     this.closing = false;
@@ -44,6 +50,8 @@ function fixture(count = 8, startupFinished = true) {
   };
   Object.assign(window, {
     document: { documentElement: root }, gBrowser,
+    CSS: { supports: (property, value) => property === "color" &&
+      ["#7c6cff", "#ff6b6b", "rgb(120 90 255)", "hsl(260 90% 65%)", "var(--missing)", "inherit"].includes(value) },
     gZenWorkspaces: workspaces,
     gBrowserInit: { delayedStartupFinished: startupFinished },
     addUnloadListener(fn) { cleanup = fn; },
@@ -236,4 +244,65 @@ test('separate windows and foreign tab events cannot corrupt local ranking', asy
   a.emit('TabSelect', b.tabs[2]); await a.flush(); await b.flush();
   assert.deepEqual(a.ranks(), ['1', null, null]);
   assert.deepEqual(b.ranks(), ['1', null, null]);
+});
+
+// These tests catch dropped choices, stale live state, invalid color insertion,
+// and leaked presentation state; the fixture supplies the browser color boundary.
+test('all style and intensity choices apply live with safe invalid fallbacks', async () => {
+  const f = fixture(3); f.load(); f.select(f.tabs[1]); await f.flush();
+  const ranks = f.ranks();
+  for (const style of ['both', 'bar', 'outline', 'background', 'fill', 'invalid']) {
+    for (const strength of ['subtle', 'normal', 'strong', 'invalid']) {
+      f.values.set('recent-tab-trail.style', style);
+      f.values.set('recent-tab-trail.strength', strength);
+      for (const o of f.observers) o.observe(); await f.flush();
+      assert.equal(f.root.getAttribute('data-rtt-style'), style === 'invalid' ? 'both' : style);
+      assert.equal(f.root.getAttribute('data-rtt-strength'), strength === 'invalid' ? 'normal' : strength);
+      assert.deepEqual(f.ranks(), ranks);
+    }
+  }
+});
+
+test('custom colors validate at the browser boundary and update or fall back live', async () => {
+  const f = fixture(3); f.load();
+  assert.equal(f.root.getAttribute('data-rtt-color-source'), 'theme');
+  assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
+  f.values.set('recent-tab-trail.color-source', 'custom');
+  for (const color of ['#7c6cff', '#ff6b6b', 'rgb(120 90 255)', 'hsl(260 90% 65%)', 'not-a-color', 'var(--missing)', 'inherit', '']) {
+    f.values.set('recent-tab-trail.custom-color', color);
+    for (const o of f.observers) o.observe(); await f.flush();
+    const valid = ['#7c6cff', '#ff6b6b', 'rgb(120 90 255)', 'hsl(260 90% 65%)'].includes(color);
+    assert.equal(f.root.getAttribute('data-rtt-color-source'), valid ? 'custom' : 'theme');
+    assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), valid ? color : '');
+  }
+  f.values.set('recent-tab-trail.custom-color', '  #7c6cff  ');
+  for (const o of f.observers) o.observe(); await f.flush();
+  assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '#7c6cff');
+  f.values.delete('recent-tab-trail.custom-color');
+  for (const o of f.observers) o.observe(); await f.flush();
+  assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '#7c6cff');
+  for (const source of ['theme', 'invalid']) {
+    f.values.set('recent-tab-trail.color-source', source);
+    for (const o of f.observers) o.observe(); await f.flush();
+    assert.equal(f.root.getAttribute('data-rtt-color-source'), 'theme');
+    assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
+  }
+  f.window.CSS = undefined;
+  f.values.set('recent-tab-trail.color-source', 'custom');
+  for (const o of f.observers) o.observe(); await f.flush();
+  assert.equal(f.root.getAttribute('data-rtt-color-source'), 'theme');
+  assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
+});
+
+test('unload clears custom presentation even with queued preference updates', async () => {
+  const f = fixture(3);
+  f.values.set('recent-tab-trail.color-source', 'custom'); f.load();
+  assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '#7c6cff');
+  for (const o of f.observers) o.observe();
+  f.cleanup(); await f.flush();
+  for (const name of ['style', 'strength', 'color-source']) {
+    assert.equal(f.root.getAttribute('data-rtt-' + name), null);
+  }
+  assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
+  assert.equal(f.observers.size, 0);
 });

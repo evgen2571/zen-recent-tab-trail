@@ -9,6 +9,7 @@
   );
   --rtt-strength: 1;
 }
+:root[data-rtt-color-source="custom"] { --rtt-accent: var(--rtt-custom-accent); }
 :root[data-rtt-strength="subtle"] { --rtt-strength: 0.75; }
 :root[data-rtt-strength="strong"] { --rtt-strength: 1.35; }
 
@@ -34,19 +35,27 @@
   inset: 3px;
   border-radius: var(--border-radius-medium, 6px);
   pointer-events: none;
-  --rtt-color: color-mix(in srgb, var(--rtt-accent) calc(var(--rtt-prominence) * var(--rtt-strength)), transparent);
+  --rtt-color: color-mix(in srgb, var(--rtt-accent) clamp(0%, calc(var(--rtt-prominence) * var(--rtt-strength)), 90%), transparent);
   --rtt-tint: color-mix(in srgb, var(--rtt-accent) calc(var(--rtt-prominence) * var(--rtt-strength) * 0.12), transparent);
+  --rtt-fill: color-mix(in srgb, var(--rtt-accent) clamp(0%, calc(var(--rtt-prominence) * var(--rtt-strength) * 0.46), 35%), transparent);
   border-inline-start: 3px solid var(--rtt-color);
   background: var(--rtt-tint);
 }
 :root[data-rtt-style="bar"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
   background: transparent;
 }
-:root[data-rtt-style="background"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+:root:is([data-rtt-style="background"], [data-rtt-style="fill"]) .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
   border-inline-start: none;
 }
+:root[data-rtt-style="outline"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+  border: 1px solid var(--rtt-color);
+  background: transparent;
+}
+:root[data-rtt-style="fill"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+  background: var(--rtt-fill);
+}
 @media (forced-colors: active) {
-  .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+  :root[data-rtt-style] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
     --rtt-accent: Highlight;
     background: transparent;
     forced-color-adjust: none;

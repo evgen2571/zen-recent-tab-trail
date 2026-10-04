@@ -22,8 +22,9 @@ test('local installation registers real files, preserves other mods and backs up
   assert.deepEqual(mods.other, initial.other);
   assert.equal(mods['recent-tab-trail'].enabled, true);
   assert.equal(mods['recent-tab-trail']['no-updates'], true);
-  for (const file of ['theme.json', 'preferences.json', 'chrome.css', 'recent-tab-trail.uc.js',
-    'README.md', 'LICENSE', 'VERIFICATION.md', 'assets/light.png', 'assets/dark.png']) {
+  for (const file of ['theme.json', 'preferences.json', 'chrome.css', 'content.css', 'recent-tab-trail.uc.js',
+    'README.md', 'LICENSE', 'VERIFICATION.md', 'assets/light.png', 'assets/dark.png', 'assets/light-outline.png', 'assets/dark-outline.png',
+    'assets/light-fill.png', 'assets/dark-fill.png']) {
     assert.deepEqual(await fs.readFile(path.join(modsDir, 'recent-tab-trail', file)), await fs.readFile(file));
   }
   const backups = (await fs.readdir(modsDir)).filter(f => f.startsWith('mods.json.rtt-backup-'));

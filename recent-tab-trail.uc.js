@@ -75,8 +75,17 @@
     const mode = choice('workspace', ['current', 'global'], 'current');
     const includePinned = Services.prefs.getBoolPref(PREFIX + 'include-pinned', true);
     const includeEssentials = Services.prefs.getBoolPref(PREFIX + 'include-essentials', true);
-    root.setAttribute('data-rtt-style', choice('style', ['bar', 'background', 'both'], 'both'));
+    root.setAttribute('data-rtt-style', choice('style', ['both', 'bar', 'outline', 'background', 'fill'], 'both'));
     root.setAttribute('data-rtt-strength', choice('strength', ['subtle', 'normal', 'strong'], 'normal'));
+    const colorSource = choice('color-source', ['theme', 'custom'], 'theme');
+    const color = Services.prefs.getStringPref(PREFIX + 'custom-color', '#7c6cff').trim();
+    // CSS.supports accepts unresolved variables and CSS-wide keywords too;
+    // those are not standalone colors and could invalidate the shared accent.
+    const custom = colorSource === 'custom' && window.CSS?.supports('color', color) &&
+      !/\b(?:var|env)\s*\(|^(?:inherit|initial|unset|revert|revert-layer)$/i.test(color);
+    root.setAttribute('data-rtt-color-source', custom ? 'custom' : 'theme');
+    if (custom) root.style.setProperty('--rtt-custom-accent', color);
+    else root.style.removeProperty('--rtt-custom-accent');
     for (const tab of marked) tab.removeAttribute(RANK);
     marked.clear();
     const activeWorkspace = window.gZenWorkspaces?.activeWorkspace;
@@ -162,6 +171,8 @@
     history = [];
     root.removeAttribute('data-rtt-style');
     root.removeAttribute('data-rtt-strength');
+    root.removeAttribute('data-rtt-color-source');
+    root.style.removeProperty('--rtt-custom-accent');
     if (window[KEY]?.destroy === destroy) delete window[KEY];
   }
 
