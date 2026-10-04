@@ -1,0 +1,54 @@
+/* SPDX-License-Identifier: MIT */
+:root {
+  --rtt-theme-accent: var(--zen-primary-color, var(--focus-outline-color, AccentColor));
+  /* Zen may choose a very dark primary color in dark mode. Keep its hue while
+     lifting it toward white; deepen light-mode accents toward black. */
+  --rtt-accent: light-dark(
+    color-mix(in srgb, var(--rtt-theme-accent) 85%, black),
+    color-mix(in srgb, var(--rtt-theme-accent) 50%, white)
+  );
+  --rtt-strength: 1;
+}
+:root[data-rtt-strength="subtle"] { --rtt-strength: 0.75; }
+:root[data-rtt-strength="strong"] { --rtt-strength: 1.35; }
+
+.tabbrowser-tab[data-rtt-rank="1"] { --rtt-prominence: 65%; }
+.tabbrowser-tab[data-rtt-rank="2"] { --rtt-prominence: 48%; }
+.tabbrowser-tab[data-rtt-rank="3"] { --rtt-prominence: 35%; }
+.tabbrowser-tab[data-rtt-rank="4"] { --rtt-prominence: 25%; }
+.tabbrowser-tab[data-rtt-rank="5"] { --rtt-prominence: 18%; }
+.tabbrowser-tab[data-rtt-rank="6"] { --rtt-prominence: 14%; }
+.tabbrowser-tab[data-rtt-rank="7"] { --rtt-prominence: 11%; }
+.tabbrowser-tab[data-rtt-rank="8"] { --rtt-prominence: 9%; }
+.tabbrowser-tab[data-rtt-rank="9"] { --rtt-prominence: 7%; }
+.tabbrowser-tab[data-rtt-rank="10"] { --rtt-prominence: 5%; }
+
+/* A separate paint layer preserves Zen's own background, shadows, container
+   lines and hover treatment. No tab dimensions or pointer targets change. */
+.tabbrowser-tab[data-rtt-rank]:not([selected], [visuallyselected], [multiselected="true"]) .tab-stack {
+  position: relative;
+}
+.tabbrowser-tab[data-rtt-rank]:not([selected], [visuallyselected], [multiselected="true"]) .tab-stack::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: var(--border-radius-medium, 6px);
+  pointer-events: none;
+  --rtt-color: color-mix(in srgb, var(--rtt-accent) calc(var(--rtt-prominence) * var(--rtt-strength)), transparent);
+  --rtt-tint: color-mix(in srgb, var(--rtt-accent) calc(var(--rtt-prominence) * var(--rtt-strength) * 0.12), transparent);
+  border-inline-start: 3px solid var(--rtt-color);
+  background: var(--rtt-tint);
+}
+:root[data-rtt-style="bar"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+  background: transparent;
+}
+:root[data-rtt-style="background"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+  border-inline-start: none;
+}
+@media (forced-colors: active) {
+  .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+    --rtt-accent: Highlight;
+    background: transparent;
+    forced-color-adjust: none;
+  }
+}

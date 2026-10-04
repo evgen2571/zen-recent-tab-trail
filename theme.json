@@ -1,0 +1,23 @@
+{
+  "id": "recent-tab-trail",
+  "name": "Recent Tab Trail",
+  "author": "evgen2571",
+  "version": "0.1.0",
+  "description": "Visualize your most recently visited tabs directly in Zen's sidebar without reordering them.",
+  "homepage": "https://github.com/evgen2571/zen-recent-tab-trail",
+  "readme": "https://github.com/evgen2571/zen-recent-tab-trail/blob/main/README.md",
+  "createdAt": "2026-10-04",
+  "updatedAt": "2026-10-04",
+  "fork": ["zen"],
+  "tags": ["Javascript", "Tabs", "Navigation", "Productivity"],
+  "style": { "chrome": "chrome.css" },
+  "preferences": "preferences.json",
+  "supportsUnload": true,
+  "scripts": {
+    "recent-tab-trail.uc.js": {
+      "name": "Recent Tab Trail",
+      "description": "Window-local tab recency indicators",
+      "include": ["chrome://browser/content/browser.xhtml"]
+    }
+  }
+}

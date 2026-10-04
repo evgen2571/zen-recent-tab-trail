@@ -1,0 +1,62 @@
+[
+  {
+    "type": "dropdown",
+    "property": "recent-tab-trail.count",
+    "label": "Number of recent tabs",
+    "defaultValue": "5",
+    "placeholder": false,
+    "options": [
+      { "label": "3", "value": "3" },
+      { "label": "5", "value": "5" },
+      { "label": "7", "value": "7" },
+      { "label": "10", "value": "10" }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "recent-tab-trail.style",
+    "label": "Indicator style",
+    "defaultValue": "both",
+    "placeholder": false,
+    "options": [
+      { "label": "Bar + subtle background", "value": "both" },
+      { "label": "Bar", "value": "bar" },
+      { "label": "Background", "value": "background" }
+    ]
+  },
+  {
+    "type": "dropdown",
+    "property": "recent-tab-trail.strength",
+    "label": "Indicator strength",
+    "defaultValue": "normal",
+    "placeholder": false,
+    "options": [
+      { "label": "Subtle", "value": "subtle" },
+      { "label": "Normal", "value": "normal" },
+      { "label": "Strong", "value": "strong" }
+    ]
+  },
+  {
+    "type": "checkbox",
+    "property": "recent-tab-trail.include-pinned",
+    "label": "Include pinned tabs",
+    "defaultValue": true
+  },
+  {
+    "type": "checkbox",
+    "property": "recent-tab-trail.include-essentials",
+    "label": "Include Essentials",
+    "defaultValue": true
+  },
+  {
+    "type": "dropdown",
+    "property": "recent-tab-trail.workspace",
+    "label": "Workspace history",
+    "defaultValue": "current",
+    "placeholder": false,
+    "options": [
+      { "label": "Current workspace", "value": "current" },
+      { "label": "Global", "value": "global" }
+    ]
+  }
+]
