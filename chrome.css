@@ -9,20 +9,9 @@
   );
   --rtt-strength: 1;
 }
-:root[data-rtt-color-source="custom"] { --rtt-accent: var(--rtt-custom-accent); }
+:root[data-rtt-color-source]:not([data-rtt-color-source="theme"]) { --rtt-accent: var(--rtt-custom-accent); }
 :root[data-rtt-strength="subtle"] { --rtt-strength: 0.75; }
 :root[data-rtt-strength="strong"] { --rtt-strength: 1.35; }
-
-.tabbrowser-tab[data-rtt-rank="1"] { --rtt-prominence: 65%; }
-.tabbrowser-tab[data-rtt-rank="2"] { --rtt-prominence: 48%; }
-.tabbrowser-tab[data-rtt-rank="3"] { --rtt-prominence: 35%; }
-.tabbrowser-tab[data-rtt-rank="4"] { --rtt-prominence: 25%; }
-.tabbrowser-tab[data-rtt-rank="5"] { --rtt-prominence: 18%; }
-.tabbrowser-tab[data-rtt-rank="6"] { --rtt-prominence: 14%; }
-.tabbrowser-tab[data-rtt-rank="7"] { --rtt-prominence: 11%; }
-.tabbrowser-tab[data-rtt-rank="8"] { --rtt-prominence: 9%; }
-.tabbrowser-tab[data-rtt-rank="9"] { --rtt-prominence: 7%; }
-.tabbrowser-tab[data-rtt-rank="10"] { --rtt-prominence: 5%; }
 
 /* A separate paint layer preserves Zen's own background, shadows, container
    lines and hover treatment. No tab dimensions or pointer targets change. */

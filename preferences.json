@@ -1,20 +1,10 @@
 [
   {
-    "type": "separator",
-    "label": "Recency"
-  },
-  {
-    "type": "dropdown",
+    "type": "string",
     "property": "recent-tab-trail.count",
     "label": "Number of recent tabs",
     "defaultValue": "5",
-    "placeholder": false,
-    "options": [
-      { "label": "3", "value": "3" },
-      { "label": "5", "value": "5" },
-      { "label": "7", "value": "7" },
-      { "label": "10", "value": "10" }
-    ]
+    "placeholder": "1–20"
   },
   {
     "type": "dropdown",
@@ -65,7 +55,14 @@
     "placeholder": false,
     "options": [
       { "label": "Zen accent", "value": "theme" },
-      { "label": "Custom", "value": "custom" }
+      { "label": "Purple", "value": "purple" },
+      { "label": "Blue", "value": "blue" },
+      { "label": "Cyan", "value": "cyan" },
+      { "label": "Green", "value": "green" },
+      { "label": "Orange", "value": "orange" },
+      { "label": "Red", "value": "red" },
+      { "label": "Pink", "value": "pink" },
+      { "label": "Custom…", "value": "custom" }
     ]
   },
   {
@@ -74,6 +71,7 @@
     "label": "Custom color",
     "defaultValue": "#7c6cff",
     "placeholder": "#7c6cff",
+    "border": "value",
     "conditions": [
       {
         "if": {

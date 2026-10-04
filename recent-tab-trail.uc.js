@@ -2,6 +2,11 @@
 (() => {
   const KEY = '__recentTabTrail';
   const RANK = 'data-rtt-rank';
+  const PROMINENCE = '--rtt-prominence';
+  const PRESET_COLORS = {
+    purple: '#8b5cf6', blue: '#3b82f6', cyan: '#06b6d4',
+    green: '#22c55e', orange: '#f97316', red: '#ef4444', pink: '#ec4899',
+  };
   const PREFIX = 'recent-tab-trail.';
   const root = document.documentElement;
   const browser = window.gBrowser;
@@ -67,26 +72,38 @@
     return choices.includes(value) ? value : fallback;
   }
 
+  function recentCount() {
+    const value = Services.prefs.getStringPref(PREFIX + 'count', '5').trim();
+    const number = Number(value);
+    return value && Number.isFinite(number) ? Math.min(20, Math.max(1, Math.round(number))) : 5;
+  }
+
+  function clearRank(tab) {
+    tab.removeAttribute(RANK);
+    tab.style.removeProperty(PROMINENCE);
+  }
+
   function refresh() {
     if (destroyed) return;
     const tabs = new Set(allTabs());
     history = history.filter(tab => tabs.has(tab));
-    const count = Number(choice('count', ['3', '5', '7', '10'], '5'));
+    const count = recentCount();
     const mode = choice('workspace', ['current', 'global'], 'current');
     const includePinned = Services.prefs.getBoolPref(PREFIX + 'include-pinned', true);
     const includeEssentials = Services.prefs.getBoolPref(PREFIX + 'include-essentials', true);
     root.setAttribute('data-rtt-style', choice('style', ['both', 'bar', 'outline', 'background', 'fill'], 'both'));
     root.setAttribute('data-rtt-strength', choice('strength', ['subtle', 'normal', 'strong'], 'normal'));
-    const colorSource = choice('color-source', ['theme', 'custom'], 'theme');
+    const colorSource = choice('color-source', ['theme', ...Object.keys(PRESET_COLORS), 'custom'], 'theme');
     const color = Services.prefs.getStringPref(PREFIX + 'custom-color', '#7c6cff').trim();
     // CSS.supports accepts unresolved variables and CSS-wide keywords too;
     // those are not standalone colors and could invalidate the shared accent.
     const custom = colorSource === 'custom' && window.CSS?.supports('color', color) &&
       !/\b(?:var|env)\s*\(|^(?:inherit|initial|unset|revert|revert-layer)$/i.test(color);
-    root.setAttribute('data-rtt-color-source', custom ? 'custom' : 'theme');
-    if (custom) root.style.setProperty('--rtt-custom-accent', color);
+    const accent = PRESET_COLORS[colorSource] ?? (custom ? color : null);
+    root.setAttribute('data-rtt-color-source', accent ? colorSource : 'theme');
+    if (accent) root.style.setProperty('--rtt-custom-accent', accent);
     else root.style.removeProperty('--rtt-custom-accent');
-    for (const tab of marked) tab.removeAttribute(RANK);
+    for (const tab of marked) clearRank(tab);
     marked.clear();
     const activeWorkspace = window.gZenWorkspaces?.activeWorkspace;
     for (const tab of history) {
@@ -98,7 +115,10 @@
           (mode === 'current' && activeWorkspace && space && space !== activeWorkspace && !essential)) {
         continue;
       }
-      tab.setAttribute(RANK, String(marked.size + 1));
+      const rank = marked.size + 1;
+      tab.setAttribute(RANK, String(rank));
+      // Age alone determines strength: 65% at rank 1, approaching a 4% floor.
+      tab.style.setProperty(PROMINENCE, `${4 + 61 * 0.72 ** (rank - 1)}%`);
       marked.add(tab);
       if (marked.size === count) break;
     }
@@ -123,7 +143,7 @@
       creationAccess.set(tab, tab.lastAccessed);
       seed([tab]);
     } else if (event.type === 'TabClose') {
-      tab.removeAttribute(RANK);
+      clearRank(tab);
       marked.delete(tab);
       history = history.filter(other => other !== tab);
     } else if (event.type === 'SSTabRestoring' || event.type === 'SSTabRestored') {
@@ -166,7 +186,7 @@
       workspaceManager?.removeChangeListeners(schedule);
     }
     window.removeEventListener('unload', destroy);
-    for (const tab of marked) tab.removeAttribute(RANK);
+    for (const tab of marked) clearRank(tab);
     marked.clear();
     history = [];
     root.removeAttribute('data-rtt-style');

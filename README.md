@@ -4,13 +4,13 @@ See your recently visited tabs in Zen’s sidebar without rearranging them.
 The latest previous tab gets the strongest highlight; older visits fade away.
 Your selected tab keeps Zen’s normal appearance.
 
-Real Zen 1.23b captures, using the default Bar + tint:
+Real Zen 1.23b captures with the Purple preset and Bar + tint:
 
-<img src="assets/light.png" alt="Light Zen sidebar with five fading recent-tab indicators" width="186"> <img src="assets/dark.png" alt="Dark Zen sidebar with five fading recent-tab indicators" width="186">
+<img src="assets/light.png" alt="Light Zen sidebar with five fading Purple recent-tab indicators" width="186"> <img src="assets/dark.png" alt="Dark Zen sidebar with five fading Purple recent-tab indicators" width="186">
 
 ## What it does
 
-- Highlights 3, 5, 7, or 10 previously visited tabs.
+- Highlights up to 1–20 previously visited tabs.
 - Follows actual tab activation, including mouse and keyboard navigation.
 - Works with workspaces, folders, pinned tabs, and Essentials.
 - Keeps a separate trail in each window, including private windows.
@@ -40,10 +40,6 @@ For this unpublished repository:
    unofficial sources and enable **Recent Tab Trail**. If needed, clear the startup
    cache from `about:support` and restart.
 
-Run the same command with Zen closed to install edits. Existing preferences and
-other mods are preserved, and the registry is backed up. For Windows from WSL,
-use the profile’s `/mnt/c/...` path.
-
 Once the repository is public, its GitHub URL can be installed through Sine’s
 **Add your own locally from a GitHub repo** field. It is not yet in the marketplace.
 See [installation details](VERIFICATION.md#local-and-public-installation-details).
@@ -54,22 +50,25 @@ Open Recent Tab Trail’s settings in Sine Mods. Changes apply immediately.
 
 | Setting | Choices | Default |
 | --- | --- | --- |
-| Number of recent tabs | 3, 5, 7, 10 | 5 |
+| Number of recent tabs | 1–20 | 5 |
 | Workspace history | Current workspace, Global | Current workspace |
 | Include pinned tabs / Essentials | Separate switches | Both on |
 | Indicator style | Bar + tint, Bar only, Outline, Tint, Solid fill | Bar + tint |
-| Color | Zen accent, Custom | Zen accent |
+| Color | Zen accent, Purple, Blue, Cyan, Green, Orange, Red, Pink, Custom | Zen accent |
 | Custom color | CSS color text; shown only with Custom | `#7c6cff` |
 | Intensity | Subtle, Normal, Strong | Normal |
 
-Custom colors accept hex, RGB, HSL, and other standalone CSS colors, for example
+The count is the maximum number of previous eligible tabs shown in the trail.
+Decimals round to the nearest integer; values clamp to 1–20. Empty, non-numeric,
+or non-finite values use 5. Presets cover common accent colors. Custom accepts any valid
+standalone CSS color, for example
 `#ff6b6b`, `rgb(120 90 255)`, or `hsl(260 90% 65%)`. Invalid colors fall back to
 Zen’s accent. All ranks use the same base color, fading automatically with age.
 Solid fill stays translucent, even with Strong intensity.
 
-Outline and Solid fill, shown in dark mode:
+Outline and Solid fill with the Purple preset, shown in dark mode:
 
-<img src="assets/dark-outline.png" alt="Real Zen sidebar with fading one-pixel outlines" width="186"> <img src="assets/dark-fill.png" alt="Real Zen sidebar with fading translucent solid fills" width="186">
+<img src="assets/dark-outline.png" alt="Real Zen sidebar with fading Purple one-pixel outlines" width="186"> <img src="assets/dark-fill.png" alt="Real Zen sidebar with fading translucent Purple solid fills" width="186">
 
 ## Compatibility
 
@@ -92,7 +91,7 @@ dependencies are required. Firefox compatibility is not claimed.
 
 ## Development
 
-Version **0.2.0** remains pre-release. With Node.js 22+:
+Version **0.2.1** remains pre-release. With Node.js 22+:
 
 ```sh
 node --check recent-tab-trail.uc.js

@@ -51,7 +51,7 @@ function fixture(count = 8, startupFinished = true) {
   Object.assign(window, {
     document: { documentElement: root }, gBrowser,
     CSS: { supports: (property, value) => property === "color" &&
-      ["#7c6cff", "#ff6b6b", "rgb(120 90 255)", "hsl(260 90% 65%)", "var(--missing)", "inherit"].includes(value) },
+      ["#7c6cff", "#ff6b6b", "rgb(120 90 255)", "hsl(260 90% 65%)", "var(--missing)", "env(foo)", "inherit", "initial", "unset", "revert", "revert-layer"].includes(value) },
     gZenWorkspaces: workspaces,
     gBrowserInit: { delayedStartupFinished: startupFinished },
     addUnloadListener(fn) { cleanup = fn; },
@@ -268,7 +268,7 @@ test('custom colors validate at the browser boundary and update or fall back liv
   assert.equal(f.root.getAttribute('data-rtt-color-source'), 'theme');
   assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
   f.values.set('recent-tab-trail.color-source', 'custom');
-  for (const color of ['#7c6cff', '#ff6b6b', 'rgb(120 90 255)', 'hsl(260 90% 65%)', 'not-a-color', 'var(--missing)', 'inherit', '']) {
+  for (const color of ['#7c6cff', '#ff6b6b', 'rgb(120 90 255)', 'hsl(260 90% 65%)', 'not-a-color', 'var(--missing)', 'env(foo)', 'inherit', 'initial', 'unset', 'revert', 'revert-layer', '']) {
     f.values.set('recent-tab-trail.custom-color', color);
     for (const o of f.observers) o.observe(); await f.flush();
     const valid = ['#7c6cff', '#ff6b6b', 'rgb(120 90 255)', 'hsl(260 90% 65%)'].includes(color);
@@ -305,4 +305,89 @@ test('unload clears custom presentation even with queued preference updates', as
   }
   assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
   assert.equal(f.observers.size, 0);
+});
+
+// Catch count parsing regressions through the number of eligible tabs painted.
+test('numeric count rounds, clamps and defaults safely while retaining saved choices', async () => {
+  const f = fixture(23); f.load();
+  for (let i = 1; i <= 21; i++) f.select(f.tabs[i]);
+  for (const [input, expected] of [
+    ...Array.from({ length: 20 }, (_, i) => [String(i + 1), i + 1]),
+    ['0', 1], ['-1', 1], ['21', 20], ['100', 20], ['abc', 5], ['', 5], ['   ', 5],
+    ['NaN', 5], ['Infinity', 5], ['-Infinity', 5], ['6.8', 7], ['6.4', 6], ['6.5', 7],
+  ]) {
+    f.values.set('recent-tab-trail.count', input);
+    for (const o of f.observers) o.observe(); await f.flush();
+    assert.equal(f.ranks().filter(Boolean).length, expected, input);
+    assert.equal(f.ranks()[21], null, 'selected tab');
+    assert.equal(f.ranks()[22], null, 'never visited');
+    assert.deepEqual(f.ranks().filter(Boolean).map(Number).sort((a, b) => a - b),
+      Array.from({ length: expected }, (_, i) => i + 1));
+  }
+});
+
+test('live count changes preserve recent order and remove stale prominence', async () => {
+  const f = fixture(23); f.load();
+  for (let i = 1; i <= 21; i++) f.select(f.tabs[i]);
+  await f.flush();
+  const recent = f.tabs.filter(t => t.hasAttribute('data-rtt-rank'));
+  const previous = recent.map(t => [t.getAttribute('data-rtt-rank'), t.style.getPropertyValue('--rtt-prominence')]);
+  for (const count of ['13', '20', '13', '3']) {
+    f.values.set('recent-tab-trail.count', count);
+    for (const o of f.observers) o.observe(); await f.flush();
+    assert.equal(f.ranks().filter(Boolean).length, Number(count));
+    for (let i = 0; i < recent.length; i++) {
+      if (Number(previous[i][0]) <= Number(count)) {
+        assert.deepEqual([recent[i].getAttribute('data-rtt-rank'), recent[i].style.getPropertyValue('--rtt-prominence')], previous[i]);
+      }
+    }
+    for (const tab of f.tabs) {
+      assert.equal(Boolean(tab.style.getPropertyValue('--rtt-prominence')), tab.hasAttribute('data-rtt-rank'));
+    }
+    if (count === '20') {
+      const prominence = f.tabs.filter(t => t.hasAttribute('data-rtt-rank'))
+        .sort((a, b) => Number(a.getAttribute('data-rtt-rank')) - Number(b.getAttribute('data-rtt-rank')))
+        .map(t => parseFloat(t.style.getPropertyValue('--rtt-prominence')));
+      assert.equal(prominence[0], 65);
+      assert.ok(prominence[19] >= 4 && prominence[19] <= 5);
+      for (let i = 1; i < prominence.length; i++) assert.ok(prominence[i - 1] > prominence[i]);
+    }
+  }
+  const closing = f.tabs.find(t => t.hasAttribute('data-rtt-rank'));
+  closing.closing = true; f.emit('TabClose', closing); await f.flush();
+  assert.equal(closing.style.getPropertyValue('--rtt-prominence'), '');
+  f.load(); await f.flush();
+  f.cleanup(); await f.flush();
+  for (const tab of f.tabs) {
+    assert.equal(tab.getAttribute('data-rtt-rank'), null);
+    assert.equal(tab.style.getPropertyValue('--rtt-prominence'), '');
+  }
+});
+
+test('presets, custom and theme switch live across styles and intensities without changing ranks', async () => {
+  const f = fixture(3); f.load(); f.select(f.tabs[1]); await f.flush();
+  const ranks = f.ranks();
+  const sources = [
+    ['purple', '#8b5cf6'], ['blue', '#3b82f6'], ['cyan', '#06b6d4'],
+    ['green', '#22c55e'], ['orange', '#f97316'], ['red', '#ef4444'], ['pink', '#ec4899'],
+    ['custom', '#7c6cff'], ['blue', '#3b82f6'], ['theme', ''], ['invalid', ''],
+  ];
+  for (const style of ['both', 'bar', 'outline', 'background', 'fill']) {
+    for (const strength of ['subtle', 'normal', 'strong']) {
+      for (const [source, color] of sources) {
+        f.values.set('recent-tab-trail.style', style);
+        f.values.set('recent-tab-trail.strength', strength);
+        f.values.set('recent-tab-trail.color-source', source);
+        for (const o of f.observers) o.observe(); await f.flush();
+        assert.equal(f.root.getAttribute('data-rtt-color-source'), color ? source : 'theme');
+        assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), color);
+        assert.deepEqual(f.ranks(), ranks);
+      }
+    }
+  }
+  f.values.set('recent-tab-trail.color-source', 'pink');
+  for (const o of f.observers) o.observe(); await f.flush();
+  f.cleanup(); await f.flush();
+  assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
+  for (const name of ['style', 'strength', 'color-source']) assert.equal(f.root.getAttribute('data-rtt-' + name), null);
 });

@@ -1,7 +1,8 @@
 # Verification record
 
-Verified 2026-10-04. Repository started empty; no existing code, license, or user
-changes were replaced. No commits or publication were made.
+Initial implementation and live verification were performed in a disposable
+environment before public release. The repository now includes committed
+implementation and appearance customization work.
 
 ## Sources and compatibility decisions
 
@@ -262,7 +263,8 @@ uninstall that entry first, then install the public version to restore normal up
    re-enabling should produce one trail. Use Browser Console to check for errors.
 
 For debugging with the Browser Toolbox, inspect `.tabbrowser-tab[data-rtt-rank]`.
-No tab label, URL, accessible name, or tab inline style is changed by this mod.
+No tab label, URL, or accessible name is changed. The only per-tab inline style
+is the namespaced prominence custom property used by the CSS paint layer.
 
 
 ## 0.2.0 appearance and release verification
@@ -324,7 +326,7 @@ hex/RGB/HSL colors, invalid/context-dependent/empty colors, live presentation wi
 unchanged ranks, queued cleanup, and installation of the content stylesheet and all six screenshot assets.
 The canonical syntax checks pass. `.github/workflows/checks.yml` runs the same
 three commands in one Ubuntu / Node 24 job on pushes and pull requests. It has
-not been run on GitHub in this local pass and does not verify browser rendering.
+successfully run on main. CI does not verify browser rendering.
 
 Reinstalled the final files using the local helper in the existing disposable
 Zen 1.23b / Sine 2.3.3 Linux profile under Xvfb. Marionette verified 210 combinations:
@@ -353,5 +355,70 @@ repeat every original keyboard, restore, folder, window, or drag test. Windows/m
 third-party themes/mods, narrow/pinned/Essential layouts, audio/container controls,
 hover and drag should still be checked manually with every new style. Very low
 contrast custom colors are intentionally not corrected by a contrast engine.
-The mod is ready for local installation and manual testing; no commits, publication,
-or GitHub workflow run were performed.
+Initial appearance implementation and live verification used a disposable
+environment before public release. GitHub Actions now runs the canonical Node
+checks on push and pull request, and the workflow has successfully run on main.
+
+## 0.2.1 settings polish
+
+The native settings now start with the count text field, followed by workspace
+and inclusion controls. Only the Appearance separator remains. Preference names
+and existing saved count/theme/custom values are preserved.
+
+The count is parsed as a finite number, rounded with `Math.round`, then clamped
+to 1–20. Empty/whitespace, non-numeric and non-finite input use 5. Normalization
+controls the effective trail depth; it does not rewrite the user's stored text.
+
+Each marked tab receives `--rtt-prominence` as a percentage calculated by
+`4 + 61 * 0.72 ** (rank - 1)`. The first five values are approximately 65%, 47.92%,
+35.62%, 26.77%, and 20.39%; rank 20 is approximately 4.12%. This strictly decreasing
+curve depends only on age, regardless of configured count. Rank removal, close,
+reinitialization and unload clear both the marker and custom property. All paint
+remains in CSS, including the existing 35% Solid fill opacity cap.
+
+A single JS mapping supplies Purple `#8b5cf6`, Blue `#3b82f6`, Cyan `#06b6d4`,
+Green `#22c55e`, Orange `#f97316`, Red `#ef4444`, and Pink `#ec4899`. Presets and
+validated custom colors share the browser-root `--rtt-custom-accent` property;
+the root source attribute identifies the chosen preset or Custom. Theme and
+invalid source/custom values remove the explicit accent and retain Zen's adjusted
+accent. No individual tab colors or settings DOM scripting were introduced.
+
+Sine 2.3.3's native `applyString` supports `border: "value"` on initial rendering
+and input changes; Custom color uses it. The upstream condition-observer typo
+remains in the documented minimum version, so `content.css` and native conditions
+metadata are retained unchanged.
+
+All 22 Node boundary/installer tests pass on Node 24.21.0, along with both
+canonical syntax checks, JSON parsing and `git diff --check`. Added coverage
+includes all counts 1–20; decimal rounding, clamps and fallbacks; live expansion
+and contraction without reordering recent ranks; strict prominence decrease and
+rank 20's nonzero floor; close/reload/unload cleanup; all presets across existing
+styles and intensities; Theme/Preset/Custom transitions; and standalone-color
+validation. Existing MRU, workspace, folder, Essential, restore and installer
+tests remain in place.
+
+The Checks workflow has successfully run on main. The 0.2.1 polish has passed
+the same canonical commands locally. Hosted checks run on push and pull request.
+CI checks syntax and Node fixtures, not browser rendering.
+
+Fresh live checks in a disposable Zen 1.23b / Sine 2.3.3 Linux profile under Xvfb
+passed 5,400 combinations: 2 themes × 20 counts × 9 color sources × 5 styles ×
+3 intensities. Every case retained ranks, excluded selected/never-visited tabs,
+produced valid nonzero paint and preserved the Solid fill cap. Prominence strictly
+decreases through rank 20. Zen's computed-color serialization quantizes some faint
+neighboring alphas; computed alpha never increased, and ranks 1–5 strictly decreased.
+Native settings exposed a text count input, only the Appearance separator, and
+all nine color choices. Native dropdown commands hid Custom for every preset and
+Theme, showed it for Custom, and updated chrome live. Native text changes saved
+count 13 and a custom hex color; the input border reflected that color. Browser
+checks also covered invalid counts and standalone/context-dependent custom colors.
+Destroy removed all markers, per-tab prominence and root color state. No console
+errors referenced the mod script. Light/dark sidebar captures were inspected;
+the six published sidebar screenshots were subsequently refreshed for 0.2.1
+with the Purple preset (`#8b5cf6`), Normal intensity and five ranked tabs. They
+show Bar + tint, Outline and Solid fill in light/dark Zen, with fixture labels.
+
+For daily-use validation, check ranks 13–20 on your own sidebar/theme, all presets
+with each style/intensity, readability and hover/audio/container controls, and
+Sine disable/re-enable cleanup. Windows/macOS, third-party mods and narrow or
+collapsed pinned/Essential layouts still require manual visual checks.
