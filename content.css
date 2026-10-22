@@ -1,12 +1,15 @@
 /* SPDX-License-Identifier: MIT */
-/* Sine 2.3.3 evaluates mod conditions before attaching the control and its live
-   observer has an upstream typo. Keep its native string field conditional using
-   the native dropdown's value as well; no settings DOM or listeners are added. */
+/* Sine 2.3.3 checks conditions before attaching controls and has a broken
+   visibility observer. Use the dropdown value to show the custom-color field. */
 @-moz-document url-prefix("about:preferences") {
-  .sineItemPreferenceDialogContent:not(:has(#recent-tab-trail-color-source menulist[value="custom"])) #recent-tab-trail-custom-color {
+  .sineItemPreferenceDialogContent:not(
+      :has(#recent-tab-trail-color-source menulist[value='custom'])
+    )
+    #recent-tab-trail-custom-color {
     display: none !important;
   }
-  .sineItemPreferenceDialogContent:has(#recent-tab-trail-color-source menulist[value="custom"]) #recent-tab-trail-custom-color {
+  .sineItemPreferenceDialogContent:has(#recent-tab-trail-color-source menulist[value='custom'])
+    #recent-tab-trail-custom-color {
     display: flex !important;
   }
 }

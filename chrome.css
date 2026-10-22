@@ -1,46 +1,66 @@
 /* SPDX-License-Identifier: MIT */
 :root {
   --rtt-theme-accent: var(--zen-primary-color, var(--focus-outline-color, AccentColor));
-  /* Zen may choose a very dark primary color in dark mode. Keep its hue while
-     lifting it toward white; deepen light-mode accents toward black. */
+  /* Lighten dark-mode accents and darken light-mode accents for contrast. */
   --rtt-accent: light-dark(
     color-mix(in srgb, var(--rtt-theme-accent) 85%, black),
     color-mix(in srgb, var(--rtt-theme-accent) 50%, white)
   );
   --rtt-strength: 1;
 }
-:root[data-rtt-color-source]:not([data-rtt-color-source="theme"]) { --rtt-accent: var(--rtt-custom-accent); }
-:root[data-rtt-strength="subtle"] { --rtt-strength: 0.75; }
-:root[data-rtt-strength="strong"] { --rtt-strength: 1.35; }
+:root[data-rtt-color-source]:not([data-rtt-color-source='theme']) {
+  --rtt-accent: var(--rtt-custom-accent);
+}
+:root[data-rtt-strength='subtle'] {
+  --rtt-strength: 0.75;
+}
+:root[data-rtt-strength='strong'] {
+  --rtt-strength: 1.35;
+}
 
-/* A separate paint layer preserves Zen's own background, shadows, container
-   lines and hover treatment. No tab dimensions or pointer targets change. */
-.tabbrowser-tab[data-rtt-rank]:not([selected], [visuallyselected], [multiselected="true"]) .tab-stack {
+/* Keep Zen's background, hover treatment, and container lines underneath. */
+.tabbrowser-tab[data-rtt-rank]:not([selected], [visuallyselected], [multiselected='true'])
+  .tab-stack {
   position: relative;
 }
-.tabbrowser-tab[data-rtt-rank]:not([selected], [visuallyselected], [multiselected="true"]) .tab-stack::after {
-  content: "";
+.tabbrowser-tab[data-rtt-rank]:not([selected], [visuallyselected], [multiselected='true'])
+  .tab-stack::after {
+  content: '';
   position: absolute;
   inset: 3px;
   border-radius: var(--border-radius-medium, 6px);
   pointer-events: none;
-  --rtt-color: color-mix(in srgb, var(--rtt-accent) clamp(0%, calc(var(--rtt-prominence) * var(--rtt-strength)), 90%), transparent);
-  --rtt-tint: color-mix(in srgb, var(--rtt-accent) calc(var(--rtt-prominence) * var(--rtt-strength) * 0.12), transparent);
-  --rtt-fill: color-mix(in srgb, var(--rtt-accent) clamp(0%, calc(var(--rtt-prominence) * var(--rtt-strength) * 0.46), 35%), transparent);
+  --rtt-color: color-mix(
+    in srgb,
+    var(--rtt-accent) clamp(0%, calc(var(--rtt-prominence) * var(--rtt-strength)), 90%),
+    transparent
+  );
+  --rtt-tint: color-mix(
+    in srgb,
+    var(--rtt-accent) calc(var(--rtt-prominence) * var(--rtt-strength) * 0.12),
+    transparent
+  );
+  --rtt-fill: color-mix(
+    in srgb,
+    var(--rtt-accent) clamp(0%, calc(var(--rtt-prominence) * var(--rtt-strength) * 0.46), 35%),
+    transparent
+  );
   border-inline-start: 3px solid var(--rtt-color);
   background: var(--rtt-tint);
 }
-:root[data-rtt-style="bar"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+:root[data-rtt-style='bar'] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
   background: transparent;
 }
-:root:is([data-rtt-style="background"], [data-rtt-style="fill"]) .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+:root:is([data-rtt-style='background'], [data-rtt-style='fill'])
+  .tabbrowser-tab[data-rtt-rank]
+  .tab-stack::after {
   border-inline-start: none;
 }
-:root[data-rtt-style="outline"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+:root[data-rtt-style='outline'] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
   border: 1px solid var(--rtt-color);
   background: transparent;
 }
-:root[data-rtt-style="fill"] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
+:root[data-rtt-style='fill'] .tabbrowser-tab[data-rtt-rank] .tab-stack::after {
   background: var(--rtt-fill);
 }
 @media (forced-colors: active) {

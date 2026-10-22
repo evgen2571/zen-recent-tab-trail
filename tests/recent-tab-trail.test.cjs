@@ -3,17 +3,22 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-// Chrome globals cannot run in Node; this boundary fixture models native tab events
-// and metadata. Integration tests in Zen must also exercise the actual loader/DOM.
+// Model browser events and metadata here; check the loader and rendering in Zen.
 class Element extends EventTarget {
   constructor(attrs = {}) {
     super();
     this.attrs = new Map(Object.entries(attrs));
     this.style = {
       values: new Map(),
-      setProperty(k, v) { this.values.set(k, v); },
-      getPropertyValue(k) { return this.values.get(k) ?? ""; },
-      removeProperty(k) { this.values.delete(k); },
+      setProperty(k, v) {
+        this.values.set(k, v);
+      },
+      getPropertyValue(k) {
+        return this.values.get(k) ?? '';
+      },
+      removeProperty(k) {
+        this.values.delete(k);
+      },
     };
     this.isConnected = true;
     this.hidden = false;
@@ -22,10 +27,18 @@ class Element extends EventTarget {
     this.visible = true;
     this.ownerDocument = { defaultView: null };
   }
-  setAttribute(k, v) { this.attrs.set(k, String(v)); }
-  getAttribute(k) { return this.attrs.get(k) ?? null; }
-  hasAttribute(k) { return this.attrs.has(k); }
-  removeAttribute(k) { this.attrs.delete(k); }
+  setAttribute(k, v) {
+    this.attrs.set(k, String(v));
+  }
+  getAttribute(k) {
+    return this.attrs.get(k) ?? null;
+  }
+  hasAttribute(k) {
+    return this.attrs.has(k);
+  }
+  removeAttribute(k) {
+    this.attrs.delete(k);
+  }
 }
 
 function fixture(count = 8, startupFinished = true) {
@@ -39,22 +52,46 @@ function fixture(count = 8, startupFinished = true) {
   const gBrowser = { tabs, selectedTab: tabs[0], tabContainer: { startupTime: 1000 } };
   tabs[0].selected = true;
   tabs.forEach(t => {
-    t.ownerDocument.defaultView = window; t.lastAccessed = 1100;
+    t.ownerDocument.defaultView = window;
+    t.lastAccessed = 1100;
     t.setAttribute('zen-workspace-id', 'one');
   });
   const workspaces = {
-    activeWorkspace: 'one', allStoredTabs: tabs,
+    activeWorkspace: 'one',
+    allStoredTabs: tabs,
     callbacks: new Set(),
-    addChangeListeners(fn) { this.callbacks.add(fn); },
-    removeChangeListeners(fn) { this.callbacks.delete(fn); },
+    addChangeListeners(fn) {
+      this.callbacks.add(fn);
+    },
+    removeChangeListeners(fn) {
+      this.callbacks.delete(fn);
+    },
   };
   Object.assign(window, {
-    document: { documentElement: root }, gBrowser,
-    CSS: { supports: (property, value) => property === "color" &&
-      ["#7c6cff", "#ff6b6b", "rgb(120 90 255)", "hsl(260 90% 65%)", "var(--missing)", "env(foo)", "inherit", "initial", "unset", "revert", "revert-layer"].includes(value) },
+    document: { documentElement: root },
+    gBrowser,
+    CSS: {
+      supports: (property, value) =>
+        property === 'color' &&
+        [
+          '#7c6cff',
+          '#ff6b6b',
+          'rgb(120 90 255)',
+          'hsl(260 90% 65%)',
+          'var(--missing)',
+          'env(foo)',
+          'inherit',
+          'initial',
+          'unset',
+          'revert',
+          'revert-layer',
+        ].includes(value),
+    },
     gZenWorkspaces: workspaces,
     gBrowserInit: { delayedStartupFinished: startupFinished },
-    addUnloadListener(fn) { cleanup = fn; },
+    addUnloadListener(fn) {
+      cleanup = fn;
+    },
   });
   const Services = {
     prefs: {
@@ -70,7 +107,8 @@ function fixture(count = 8, startupFinished = true) {
   };
   const context = vm.createContext({ window, document: window.document, Services, queueMicrotask });
   const source = fs.existsSync('recent-tab-trail.uc.js')
-    ? fs.readFileSync('recent-tab-trail.uc.js', 'utf8') : '';
+    ? fs.readFileSync('recent-tab-trail.uc.js', 'utf8')
+    : '';
   const load = () => vm.runInContext(source, context);
   const emit = (name, target, detail = {}) => {
     const e = new Event(name);
@@ -90,216 +128,327 @@ function fixture(count = 8, startupFinished = true) {
     emit('TabSelect', t, { previousTab });
   };
   const ranks = () => tabs.map(t => t.getAttribute('data-rtt-rank'));
-  const flush = async () => { await new Promise(resolve => setImmediate(resolve)); };
-  return { window, root, tabs, values, observers, topicObservers, workspaces,
-    load, emit, select, ranks, flush, cleanup: () => cleanup?.(), gBrowser };
+  const flush = async () => {
+    await new Promise(resolve => setImmediate(resolve));
+  };
+  return {
+    window,
+    root,
+    tabs,
+    values,
+    observers,
+    topicObservers,
+    workspaces,
+    load,
+    emit,
+    select,
+    ranks,
+    flush,
+    cleanup: () => cleanup?.(),
+    gBrowser,
+  };
 }
 
 test('actual selections produce the requested A B C D then B history without moving tabs', async () => {
-  const f = fixture(4); f.load();
+  const f = fixture(4);
+  f.load();
   const original = [...f.tabs];
-  f.select(f.tabs[1]); f.select(f.tabs[2]); f.select(f.tabs[3]); await f.flush();
+  f.select(f.tabs[1]);
+  f.select(f.tabs[2]);
+  f.select(f.tabs[3]);
+  await f.flush();
   assert.deepEqual(f.ranks(), ['3', '2', '1', null]);
-  f.select(f.tabs[1]); await f.flush();
+  f.select(f.tabs[1]);
+  await f.flush();
   assert.deepEqual(f.ranks(), ['3', null, '2', '1']);
   assert.deepEqual(f.tabs, original);
 });
 
 test('default depth is five and never-selected background tabs stay unranked', async () => {
-  const f = fixture(); f.load();
+  const f = fixture();
+  f.load();
   for (let i = 1; i <= 6; i++) f.select(f.tabs[i]);
   await f.flush();
   assert.deepEqual(f.ranks(), [null, '5', '4', '3', '2', '1', null, null]);
-  f.emit('TabOpen', f.tabs[7]); await f.flush();
+  f.emit('TabOpen', f.tabs[7]);
+  await f.flush();
   assert.equal(f.tabs[7].getAttribute('data-rtt-rank'), null);
 });
 
 test('startup seeds persisted recency but excludes fresh creation timestamps', async () => {
   const f = fixture(4);
-  f.tabs[1].lastAccessed = 500; f.tabs[2].lastAccessed = 700;
-  f.load(); await f.flush();
+  f.tabs[1].lastAccessed = 500;
+  f.tabs[2].lastAccessed = 700;
+  f.load();
+  await f.flush();
   assert.deepEqual(f.ranks(), [null, '2', '1', null]);
 });
 
 test('late initialization recognizes tabs actually seen in this session', async () => {
-  const f = fixture(3); f.tabs[1]._lastSeenActive = 1100;
-  f.load(); await f.flush();
+  const f = fixture(3);
+  f.tabs[1]._lastSeenActive = 1100;
+  f.load();
+  await f.flush();
   assert.deepEqual(f.ranks(), [null, '1', null]);
 });
 
 test('close clears detached markers and compacts ranks', async () => {
-  const f = fixture(5); f.load();
+  const f = fixture(5);
+  f.load();
   for (let i = 1; i < 5; i++) f.select(f.tabs[i]);
   await f.flush();
-  f.tabs[3].closing = true; f.emit('TabClose', f.tabs[3]); await f.flush();
+  f.tabs[3].closing = true;
+  f.emit('TabClose', f.tabs[3]);
+  await f.flush();
   assert.deepEqual(f.ranks(), ['3', '2', '1', null, null]);
-  f.tabs[0].closing = true; f.emit('TabClose', f.tabs[0]); await f.flush();
+  f.tabs[0].closing = true;
+  f.emit('TabClose', f.tabs[0]);
+  await f.flush();
   assert.deepEqual(f.ranks(), [null, '2', '1', null, null]);
 });
 
 test('restore inserts retained metadata without selecting or loading a background tab', async () => {
-  const f = fixture(4); f.load(); f.select(f.tabs[1]); await f.flush();
+  const f = fixture(4);
+  f.load();
+  f.select(f.tabs[1]);
+  await f.flush();
   f.tabs[2].lastAccessed = 600;
-  f.emit('SSTabRestoring', f.tabs[2]); await f.flush();
+  f.emit('SSTabRestoring', f.tabs[2]);
+  await f.flush();
   assert.deepEqual(f.ranks(), ['1', null, '2', null]);
-  f.emit('SSTabRestored', f.tabs[3]); await f.flush();
+  f.emit('SSTabRestored', f.tabs[3]);
+  await f.flush();
   assert.equal(f.tabs[3].getAttribute('data-rtt-rank'), null);
 });
 
 test('restore recognizes a native same-session timestamp replacing the creation timestamp', async () => {
-  const f = fixture(4); f.load(); f.select(f.tabs[1]);
+  const f = fixture(4);
+  f.load();
+  f.select(f.tabs[1]);
   f.emit('TabOpen', f.tabs[2]);
   f.tabs[2].lastAccessed = 1150;
-  f.emit('SSTabRestoring', f.tabs[2]); await f.flush();
+  f.emit('SSTabRestoring', f.tabs[2]);
+  await f.flush();
   assert.deepEqual(f.ranks(), ['1', null, '2', null]);
 });
 
 test('converting a visited pinned tab to Essential immediately updates inclusion', async () => {
-  const f = fixture(3); f.load(); f.tabs[1].pinned = true;
-  f.select(f.tabs[1]); f.select(f.tabs[2]); await f.flush();
+  const f = fixture(3);
+  f.load();
+  f.tabs[1].pinned = true;
+  f.select(f.tabs[1]);
+  f.select(f.tabs[2]);
+  await f.flush();
   f.values.set('recent-tab-trail.include-essentials', false);
-  for (const o of f.observers) o.observe(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
   assert.equal(f.ranks()[1], '1');
   f.tabs[1].setAttribute('zen-essential', 'true');
-  f.emit('TabAddedToEssentials', f.tabs[1]); await f.flush();
+  f.emit('TabAddedToEssentials', f.tabs[1]);
+  await f.flush();
   assert.equal(f.ranks()[1], null);
   f.tabs[1].removeAttribute('zen-essential');
-  f.emit('TabRemovedFromEssentials', f.tabs[1]); await f.flush();
+  f.emit('TabRemovedFromEssentials', f.tabs[1]);
+  await f.flush();
   assert.equal(f.ranks()[1], '1');
 });
 
 test('workspace rendering filters history then assigns contiguous eligible ranks', async () => {
-  const f = fixture(4); f.tabs[1].setAttribute('zen-workspace-id', 'two');
-  f.load(); f.select(f.tabs[1]); f.select(f.tabs[2]); f.select(f.tabs[3]); await f.flush();
+  const f = fixture(4);
+  f.tabs[1].setAttribute('zen-workspace-id', 'two');
+  f.load();
+  f.select(f.tabs[1]);
+  f.select(f.tabs[2]);
+  f.select(f.tabs[3]);
+  await f.flush();
   assert.deepEqual(f.ranks(), ['2', null, '1', null]);
   f.workspaces.activeWorkspace = 'two';
   for (const fn of f.workspaces.callbacks) fn();
-  await f.flush(); assert.equal(f.tabs[1].getAttribute('data-rtt-rank'), '1');
+  await f.flush();
+  assert.equal(f.tabs[1].getAttribute('data-rtt-rank'), '1');
   f.values.set('recent-tab-trail.workspace', 'global');
   for (const o of f.observers) o.observe();
-  await f.flush(); assert.deepEqual(f.ranks(), ['3', '2', '1', null]);
+  await f.flush();
+  assert.deepEqual(f.ranks(), ['3', '2', '1', null]);
 });
 
 test('pinned, Essentials, placeholders, hidden and collapsed folder tabs use eligibility', async () => {
-  const f = fixture(7); f.load();
+  const f = fixture(7);
+  f.load();
   f.tabs[1].pinned = true;
-  f.tabs[2].pinned = true; f.tabs[2].setAttribute('zen-essential', 'true');
+  f.tabs[2].pinned = true;
+  f.tabs[2].setAttribute('zen-essential', 'true');
   f.tabs[3].setAttribute('zen-empty-tab', 'true');
-  f.tabs[4].hidden = true; f.tabs[5].visible = false;
+  f.tabs[4].hidden = true;
+  f.tabs[5].visible = false;
   for (let i = 1; i < 7; i++) f.select(f.tabs[i]);
   await f.flush();
   assert.deepEqual(f.ranks(), ['3', '2', '1', null, null, null, null]);
   f.values.set('recent-tab-trail.include-pinned', false);
-  for (const o of f.observers) o.observe(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
   assert.deepEqual(f.ranks(), ['2', null, '1', null, null, null, null]);
   f.values.set('recent-tab-trail.include-essentials', false);
-  for (const o of f.observers) o.observe(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
   assert.deepEqual(f.ranks(), ['1', null, null, null, null, null, null]);
-  f.tabs[5].visible = true; f.emit('ZenFolderAnimationFinished', f.tabs[5]);
-  await f.flush(); assert.equal(f.tabs[5].getAttribute('data-rtt-rank'), '1');
+  f.tabs[5].visible = true;
+  f.emit('ZenFolderAnimationFinished', f.tabs[5]);
+  await f.flush();
+  assert.equal(f.tabs[5].getAttribute('data-rtt-rank'), '1');
 });
 
 test('preferences apply live and invalid choices fall back to defaults', async () => {
-  const f = fixture(); f.load();
+  const f = fixture();
+  f.load();
   for (let i = 1; i < 7; i++) f.select(f.tabs[i]);
   f.values.set('recent-tab-trail.count', '3');
   f.values.set('recent-tab-trail.style', 'bar');
   f.values.set('recent-tab-trail.strength', 'strong');
-  for (const o of f.observers) o.observe(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
   assert.equal(f.ranks().filter(Boolean).length, 3);
   assert.equal(f.root.getAttribute('data-rtt-style'), 'bar');
   assert.equal(f.root.getAttribute('data-rtt-strength'), 'strong');
   f.values.set('recent-tab-trail.count', 'bogus');
-  for (const o of f.observers) o.observe(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
   assert.equal(f.ranks().filter(Boolean).length, 5);
 });
 
 test('duplicate initialization and cleanup remove attributes, listeners and queued work', async () => {
-  const f = fixture(3); f.load(); f.select(f.tabs[1]); await f.flush();
-  f.load(); f.select(f.tabs[2]); await f.flush();
+  const f = fixture(3);
+  f.load();
+  f.select(f.tabs[1]);
+  await f.flush();
+  f.load();
+  f.select(f.tabs[2]);
+  await f.flush();
   assert.deepEqual(f.ranks(), ['2', '1', null]);
-  assert.equal(f.observers.size, 1); assert.equal(f.workspaces.callbacks.size, 1);
-  f.select(f.tabs[0]); f.cleanup(); await f.flush();
+  assert.equal(f.observers.size, 1);
+  assert.equal(f.workspaces.callbacks.size, 1);
+  f.select(f.tabs[0]);
+  f.cleanup();
+  await f.flush();
   assert.deepEqual(f.ranks(), [null, null, null]);
   assert.equal(f.root.getAttribute('data-rtt-style'), null);
-  assert.equal(f.observers.size, 0); assert.equal(f.workspaces.callbacks.size, 0);
-  f.select(f.tabs[1]); await f.flush();
+  assert.equal(f.observers.size, 0);
+  assert.equal(f.workspaces.callbacks.size, 0);
+  f.select(f.tabs[1]);
+  await f.flush();
   assert.deepEqual(f.ranks(), [null, null, null]);
 });
 
 test('startup waiting can be cancelled and ignores other windows', async () => {
-  const f = fixture(3, false); f.load();
+  const f = fixture(3, false);
+  f.load();
   assert.equal(f.topicObservers.size, 1);
   for (const o of f.topicObservers) o.observe({}, 'browser-delayed-startup-finished');
   assert.equal(f.observers.size, 0);
-  f.cleanup(); assert.equal(f.topicObservers.size, 0);
+  f.cleanup();
+  assert.equal(f.topicObservers.size, 0);
   f.load();
   for (const o of f.topicObservers) o.observe(f.window, 'browser-delayed-startup-finished');
-  f.select(f.tabs[1]); await f.flush(); assert.equal(f.ranks()[0], '1');
+  f.select(f.tabs[1]);
+  await f.flush();
+  assert.equal(f.ranks()[0], '1');
 });
 
 test('separate windows and foreign tab events cannot corrupt local ranking', async () => {
-  const a = fixture(3), b = fixture(3); a.load(); b.load();
-  a.select(a.tabs[1]); b.select(b.tabs[2]);
-  a.emit('TabSelect', b.tabs[2]); await a.flush(); await b.flush();
+  const a = fixture(3),
+    b = fixture(3);
+  a.load();
+  b.load();
+  a.select(a.tabs[1]);
+  b.select(b.tabs[2]);
+  a.emit('TabSelect', b.tabs[2]);
+  await a.flush();
+  await b.flush();
   assert.deepEqual(a.ranks(), ['1', null, null]);
   assert.deepEqual(b.ranks(), ['1', null, null]);
 });
 
-// These tests catch dropped choices, stale live state, invalid color insertion,
-// and leaked presentation state; the fixture supplies the browser color boundary.
 test('all style and intensity choices apply live with safe invalid fallbacks', async () => {
-  const f = fixture(3); f.load(); f.select(f.tabs[1]); await f.flush();
+  const f = fixture(3);
+  f.load();
+  f.select(f.tabs[1]);
+  await f.flush();
   const ranks = f.ranks();
   for (const style of ['both', 'bar', 'outline', 'background', 'fill', 'invalid']) {
     for (const strength of ['subtle', 'normal', 'strong', 'invalid']) {
       f.values.set('recent-tab-trail.style', style);
       f.values.set('recent-tab-trail.strength', strength);
-      for (const o of f.observers) o.observe(); await f.flush();
+      for (const o of f.observers) o.observe();
+      await f.flush();
       assert.equal(f.root.getAttribute('data-rtt-style'), style === 'invalid' ? 'both' : style);
-      assert.equal(f.root.getAttribute('data-rtt-strength'), strength === 'invalid' ? 'normal' : strength);
+      assert.equal(
+        f.root.getAttribute('data-rtt-strength'),
+        strength === 'invalid' ? 'normal' : strength,
+      );
       assert.deepEqual(f.ranks(), ranks);
     }
   }
 });
 
 test('custom colors validate at the browser boundary and update or fall back live', async () => {
-  const f = fixture(3); f.load();
+  const f = fixture(3);
+  f.load();
   assert.equal(f.root.getAttribute('data-rtt-color-source'), 'theme');
   assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
   f.values.set('recent-tab-trail.color-source', 'custom');
-  for (const color of ['#7c6cff', '#ff6b6b', 'rgb(120 90 255)', 'hsl(260 90% 65%)', 'not-a-color', 'var(--missing)', 'env(foo)', 'inherit', 'initial', 'unset', 'revert', 'revert-layer', '']) {
+  for (const color of [
+    '#7c6cff',
+    '#ff6b6b',
+    'rgb(120 90 255)',
+    'hsl(260 90% 65%)',
+    'not-a-color',
+    'var(--missing)',
+    'env(foo)',
+    'inherit',
+    'initial',
+    'unset',
+    'revert',
+    'revert-layer',
+    '',
+  ]) {
     f.values.set('recent-tab-trail.custom-color', color);
-    for (const o of f.observers) o.observe(); await f.flush();
+    for (const o of f.observers) o.observe();
+    await f.flush();
     const valid = ['#7c6cff', '#ff6b6b', 'rgb(120 90 255)', 'hsl(260 90% 65%)'].includes(color);
     assert.equal(f.root.getAttribute('data-rtt-color-source'), valid ? 'custom' : 'theme');
     assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), valid ? color : '');
   }
   f.values.set('recent-tab-trail.custom-color', '  #7c6cff  ');
-  for (const o of f.observers) o.observe(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
   assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '#7c6cff');
   f.values.delete('recent-tab-trail.custom-color');
-  for (const o of f.observers) o.observe(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
   assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '#7c6cff');
   for (const source of ['theme', 'invalid']) {
     f.values.set('recent-tab-trail.color-source', source);
-    for (const o of f.observers) o.observe(); await f.flush();
+    for (const o of f.observers) o.observe();
+    await f.flush();
     assert.equal(f.root.getAttribute('data-rtt-color-source'), 'theme');
     assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
   }
   f.window.CSS = undefined;
   f.values.set('recent-tab-trail.color-source', 'custom');
-  for (const o of f.observers) o.observe(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
   assert.equal(f.root.getAttribute('data-rtt-color-source'), 'theme');
   assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
 });
 
 test('unload clears custom presentation even with queued preference updates', async () => {
   const f = fixture(3);
-  f.values.set('recent-tab-trail.color-source', 'custom'); f.load();
+  f.values.set('recent-tab-trail.color-source', 'custom');
+  f.load();
   assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '#7c6cff');
   for (const o of f.observers) o.observe();
-  f.cleanup(); await f.flush();
+  f.cleanup();
+  await f.flush();
   for (const name of ['style', 'strength', 'color-source']) {
     assert.equal(f.root.getAttribute('data-rtt-' + name), null);
   }
@@ -307,46 +456,82 @@ test('unload clears custom presentation even with queued preference updates', as
   assert.equal(f.observers.size, 0);
 });
 
-// Catch count parsing regressions through the number of eligible tabs painted.
 test('numeric count rounds, clamps and defaults safely while retaining saved choices', async () => {
-  const f = fixture(23); f.load();
+  const f = fixture(23);
+  f.load();
   for (let i = 1; i <= 21; i++) f.select(f.tabs[i]);
   for (const [input, expected] of [
     ...Array.from({ length: 20 }, (_, i) => [String(i + 1), i + 1]),
-    ['0', 1], ['-1', 1], ['21', 20], ['100', 20], ['abc', 5], ['', 5], ['   ', 5],
-    ['NaN', 5], ['Infinity', 5], ['-Infinity', 5], ['6.8', 7], ['6.4', 6], ['6.5', 7],
+    ['0', 1],
+    ['-1', 1],
+    ['21', 20],
+    ['100', 20],
+    ['abc', 5],
+    ['', 5],
+    ['   ', 5],
+    ['NaN', 5],
+    ['Infinity', 5],
+    ['-Infinity', 5],
+    ['6.8', 7],
+    ['6.4', 6],
+    ['6.5', 7],
   ]) {
     f.values.set('recent-tab-trail.count', input);
-    for (const o of f.observers) o.observe(); await f.flush();
+    for (const o of f.observers) o.observe();
+    await f.flush();
     assert.equal(f.ranks().filter(Boolean).length, expected, input);
     assert.equal(f.ranks()[21], null, 'selected tab');
     assert.equal(f.ranks()[22], null, 'never visited');
-    assert.deepEqual(f.ranks().filter(Boolean).map(Number).sort((a, b) => a - b),
-      Array.from({ length: expected }, (_, i) => i + 1));
+    assert.deepEqual(
+      f
+        .ranks()
+        .filter(Boolean)
+        .map(Number)
+        .sort((a, b) => a - b),
+      Array.from({ length: expected }, (_, i) => i + 1),
+    );
   }
 });
 
 test('live count changes preserve recent order and remove stale prominence', async () => {
-  const f = fixture(23); f.load();
+  const f = fixture(23);
+  f.load();
   for (let i = 1; i <= 21; i++) f.select(f.tabs[i]);
   await f.flush();
   const recent = f.tabs.filter(t => t.hasAttribute('data-rtt-rank'));
-  const previous = recent.map(t => [t.getAttribute('data-rtt-rank'), t.style.getPropertyValue('--rtt-prominence')]);
+  const previous = recent.map(t => [
+    t.getAttribute('data-rtt-rank'),
+    t.style.getPropertyValue('--rtt-prominence'),
+  ]);
   for (const count of ['13', '20', '13', '3']) {
     f.values.set('recent-tab-trail.count', count);
-    for (const o of f.observers) o.observe(); await f.flush();
+    for (const o of f.observers) o.observe();
+    await f.flush();
     assert.equal(f.ranks().filter(Boolean).length, Number(count));
     for (let i = 0; i < recent.length; i++) {
       if (Number(previous[i][0]) <= Number(count)) {
-        assert.deepEqual([recent[i].getAttribute('data-rtt-rank'), recent[i].style.getPropertyValue('--rtt-prominence')], previous[i]);
+        assert.deepEqual(
+          [
+            recent[i].getAttribute('data-rtt-rank'),
+            recent[i].style.getPropertyValue('--rtt-prominence'),
+          ],
+          previous[i],
+        );
       }
     }
     for (const tab of f.tabs) {
-      assert.equal(Boolean(tab.style.getPropertyValue('--rtt-prominence')), tab.hasAttribute('data-rtt-rank'));
+      assert.equal(
+        Boolean(tab.style.getPropertyValue('--rtt-prominence')),
+        tab.hasAttribute('data-rtt-rank'),
+      );
     }
     if (count === '20') {
-      const prominence = f.tabs.filter(t => t.hasAttribute('data-rtt-rank'))
-        .sort((a, b) => Number(a.getAttribute('data-rtt-rank')) - Number(b.getAttribute('data-rtt-rank')))
+      const prominence = f.tabs
+        .filter(t => t.hasAttribute('data-rtt-rank'))
+        .sort(
+          (a, b) =>
+            Number(a.getAttribute('data-rtt-rank')) - Number(b.getAttribute('data-rtt-rank')),
+        )
         .map(t => parseFloat(t.style.getPropertyValue('--rtt-prominence')));
       assert.equal(prominence[0], 65);
       assert.ok(prominence[19] >= 4 && prominence[19] <= 5);
@@ -354,10 +539,14 @@ test('live count changes preserve recent order and remove stale prominence', asy
     }
   }
   const closing = f.tabs.find(t => t.hasAttribute('data-rtt-rank'));
-  closing.closing = true; f.emit('TabClose', closing); await f.flush();
+  closing.closing = true;
+  f.emit('TabClose', closing);
+  await f.flush();
   assert.equal(closing.style.getPropertyValue('--rtt-prominence'), '');
-  f.load(); await f.flush();
-  f.cleanup(); await f.flush();
+  f.load();
+  await f.flush();
+  f.cleanup();
+  await f.flush();
   for (const tab of f.tabs) {
     assert.equal(tab.getAttribute('data-rtt-rank'), null);
     assert.equal(tab.style.getPropertyValue('--rtt-prominence'), '');
@@ -365,12 +554,23 @@ test('live count changes preserve recent order and remove stale prominence', asy
 });
 
 test('presets, custom and theme switch live across styles and intensities without changing ranks', async () => {
-  const f = fixture(3); f.load(); f.select(f.tabs[1]); await f.flush();
+  const f = fixture(3);
+  f.load();
+  f.select(f.tabs[1]);
+  await f.flush();
   const ranks = f.ranks();
   const sources = [
-    ['purple', '#8b5cf6'], ['blue', '#3b82f6'], ['cyan', '#06b6d4'],
-    ['green', '#22c55e'], ['orange', '#f97316'], ['red', '#ef4444'], ['pink', '#ec4899'],
-    ['custom', '#7c6cff'], ['blue', '#3b82f6'], ['theme', ''], ['invalid', ''],
+    ['purple', '#8b5cf6'],
+    ['blue', '#3b82f6'],
+    ['cyan', '#06b6d4'],
+    ['green', '#22c55e'],
+    ['orange', '#f97316'],
+    ['red', '#ef4444'],
+    ['pink', '#ec4899'],
+    ['custom', '#7c6cff'],
+    ['blue', '#3b82f6'],
+    ['theme', ''],
+    ['invalid', ''],
   ];
   for (const style of ['both', 'bar', 'outline', 'background', 'fill']) {
     for (const strength of ['subtle', 'normal', 'strong']) {
@@ -378,7 +578,8 @@ test('presets, custom and theme switch live across styles and intensities withou
         f.values.set('recent-tab-trail.style', style);
         f.values.set('recent-tab-trail.strength', strength);
         f.values.set('recent-tab-trail.color-source', source);
-        for (const o of f.observers) o.observe(); await f.flush();
+        for (const o of f.observers) o.observe();
+        await f.flush();
         assert.equal(f.root.getAttribute('data-rtt-color-source'), color ? source : 'theme');
         assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), color);
         assert.deepEqual(f.ranks(), ranks);
@@ -386,8 +587,11 @@ test('presets, custom and theme switch live across styles and intensities withou
     }
   }
   f.values.set('recent-tab-trail.color-source', 'pink');
-  for (const o of f.observers) o.observe(); await f.flush();
-  f.cleanup(); await f.flush();
+  for (const o of f.observers) o.observe();
+  await f.flush();
+  f.cleanup();
+  await f.flush();
   assert.equal(f.root.style.getPropertyValue('--rtt-custom-accent'), '');
-  for (const name of ['style', 'strength', 'color-source']) assert.equal(f.root.getAttribute('data-rtt-' + name), null);
+  for (const name of ['style', 'strength', 'color-source'])
+    assert.equal(f.root.getAttribute('data-rtt-' + name), null);
 });

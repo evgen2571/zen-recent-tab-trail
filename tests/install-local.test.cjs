@@ -15,23 +15,41 @@ test('local installation registers real files, preserves other mods and backs up
   const registry = path.join(modsDir, 'mods.json');
   const initial = { other: { id: 'other', enabled: true, custom: 'keep' } };
   await fs.writeFile(registry, JSON.stringify(initial));
-  const install = () => spawnSync(process.execPath, ['tools/install-local.mjs', profile], { encoding: 'utf8' });
+  const install = () =>
+    spawnSync(process.execPath, ['tools/install-local.mjs', profile], { encoding: 'utf8' });
   let result = install();
   assert.equal(result.status, 0, result.stderr);
   let mods = JSON.parse(await fs.readFile(registry));
   assert.deepEqual(mods.other, initial.other);
   assert.equal(mods['recent-tab-trail'].enabled, true);
   assert.equal(mods['recent-tab-trail']['no-updates'], true);
-  for (const file of ['theme.json', 'preferences.json', 'chrome.css', 'content.css', 'recent-tab-trail.uc.js',
-    'README.md', 'LICENSE', 'VERIFICATION.md', 'assets/light.png', 'assets/dark.png', 'assets/light-outline.png', 'assets/dark-outline.png',
-    'assets/light-fill.png', 'assets/dark-fill.png']) {
-    assert.deepEqual(await fs.readFile(path.join(modsDir, 'recent-tab-trail', file)), await fs.readFile(file));
+  for (const file of [
+    'theme.json',
+    'preferences.json',
+    'chrome.css',
+    'content.css',
+    'recent-tab-trail.uc.js',
+    'README.md',
+    'LICENSE',
+    'VERIFICATION.md',
+    'assets/light.png',
+    'assets/dark.png',
+    'assets/light-outline.png',
+    'assets/dark-outline.png',
+    'assets/light-fill.png',
+    'assets/dark-fill.png',
+  ]) {
+    assert.deepEqual(
+      await fs.readFile(path.join(modsDir, 'recent-tab-trail', file)),
+      await fs.readFile(file),
+    );
   }
   const backups = (await fs.readdir(modsDir)).filter(f => f.startsWith('mods.json.rtt-backup-'));
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(modsDir, backups[0]))), initial);
   mods['recent-tab-trail'].enabled = false;
   await fs.writeFile(registry, JSON.stringify(mods));
-  result = install(); assert.equal(result.status, 0, result.stderr);
+  result = install();
+  assert.equal(result.status, 0, result.stderr);
   mods = JSON.parse(await fs.readFile(registry));
   assert.equal(mods['recent-tab-trail'].enabled, false);
   assert.deepEqual(mods.other, initial.other);
@@ -40,7 +58,8 @@ test('local installation registers real files, preserves other mods and backs up
 test('local installer refuses an uninitialized profile or invalid registry without writing', async t => {
   const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'rtt-install-'));
   t.after(() => fs.rm(profile, { recursive: true, force: true }));
-  const run = () => spawnSync(process.execPath, ['tools/install-local.mjs', profile], { encoding: 'utf8' });
+  const run = () =>
+    spawnSync(process.execPath, ['tools/install-local.mjs', profile], { encoding: 'utf8' });
   assert.notEqual(run().status, 0);
   assert.deepEqual(await fs.readdir(profile), []);
   await fs.mkdir(path.join(profile, 'chrome', 'JS'), { recursive: true });

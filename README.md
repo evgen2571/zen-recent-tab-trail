@@ -1,97 +1,78 @@
 # Recent Tab Trail
 
-See your recently visited tabs in Zen’s sidebar without rearranging them.
-The latest previous tab gets the strongest highlight; older visits fade away.
-Your selected tab keeps Zen’s normal appearance.
+I often have way too many tabs open, jump between them randomly, and lose track
+of the ones I visited recently. I made this Zen mod to help me find my way back.
 
-Real Zen 1.23b captures with the Purple preset and Bar + tint:
+It highlights recently visited tabs in the sidebar. The most recent gets the
+strongest highlight, and older visits fade. Tabs stay in place, and the selected
+tab keeps its normal appearance.
+
+Light and dark mode with the Purple color and Bar + tint style:
 
 <img src="assets/light.png" alt="Light Zen sidebar with five fading Purple recent-tab indicators" width="186"> <img src="assets/dark.png" alt="Dark Zen sidebar with five fading Purple recent-tab indicators" width="186">
 
 ## What it does
 
-- Highlights up to 20 previously visited tabs, configurable from 1 to 20.
-- Follows actual tab activation, including mouse and keyboard navigation.
+- Shows up to 20 previously visited tabs (5 by default).
+- Follows tab selection whether you use the mouse or keyboard.
 - Works with workspaces, folders, pinned tabs, and Essentials.
 - Keeps a separate trail in each window, including private windows.
-- Stores settings only. The mod saves no browsing history and makes no network requests.
-
-## Why
-
-**Tab position = spatial organization. Trail intensity = temporal recency.**
-Keep your folders and tab positions while seeing where you were just working.
+- Saves only settings, with no browsing history stored or network requests.
 
 ## Installation
 
-Requires Zen Browser, [Sine 2.3.3 or later](https://github.com/sineorg/docs/blob/main/src/installation.md),
-and permission for unofficial userChrome JavaScript.
+You'll need Zen Browser and [Sine 2.3.3 or later](https://github.com/sineorg/docs/blob/main/src/installation.md).
 
-### Sine
+1. In **Sine Mods**, choose **Add your own locally from a GitHub repo** and enter:
 
-In **Sine Mods**, use **Add your own locally from a GitHub repo** and enter:
+   ```text
+   https://github.com/evgen2571/zen-recent-tab-trail
+   ```
 
-```text
-https://github.com/evgen2571/zen-recent-tab-trail
-```
+2. In **Sine settings**, allow JavaScript from unofficial sources. This is
+   required for the mod to run (`sine.allow-unsafe-js = true` in `about:config`).
+3. Enable **Recent Tab Trail**.
 
-In **Sine settings**, allow JavaScript from unofficial sources, then enable
-**Recent Tab Trail** after installation.
+For a local checkout or offline install, see [local installation](VERIFICATION.md#development--offline-installation).
 
-### Development / offline installation
+## Settings
 
-With Node.js 22+, use the bundled installer from the checkout after closing Zen:
-
-```sh
-node tools/install-local.mjs "/absolute/path/to/Zen/profile"
-```
-
-Use an initialized Sine profile. See [installation details](VERIFICATION.md#development--offline-installation).
-
-## Customization
-
-Open Recent Tab Trail’s settings in Sine Mods. Changes apply immediately.
+Open Recent Tab Trail's settings in Sine Mods. Changes apply immediately.
 
 | Setting | Choices | Default |
 | --- | --- | --- |
-| Number of recent tabs | 1–20 | 5 |
+| Number of recent tabs | 1 to 20 | 5 |
 | Workspace history | Current workspace, Global | Current workspace |
 | Include pinned tabs / Essentials | Separate switches | Both on |
 | Indicator style | Bar + tint, Bar only, Outline, Tint, Solid fill | Bar + tint |
 | Color | Zen accent, Purple, Blue, Cyan, Green, Orange, Red, Pink, Custom | Zen accent |
-| Custom color | CSS color text; shown only with Custom | `#7c6cff` |
+| Custom color | CSS color; shown only with Custom | `#7c6cff` |
 | Intensity | Subtle, Normal, Strong | Normal |
 
-The count is the maximum number of previous eligible tabs shown in the trail.
-Decimals round to the nearest integer; values clamp to 1–20. Empty, non-numeric,
-or non-finite values use 5. Presets cover common accent colors. Custom accepts any valid
-standalone CSS color, for example
-`#ff6b6b`, `rgb(120 90 255)`, or `hsl(260 90% 65%)`. Invalid colors fall back to
-Zen’s accent. All ranks use the same base color, fading automatically with age.
-Solid fill stays translucent, even with Strong intensity.
+Custom colors can be hex, RGB, HSL, or another standalone CSS color. Invalid
+colors fall back to Zen's accent. Solid fill stays translucent even at Strong
+intensity.
 
-Outline and Solid fill with the Purple preset, shown in dark mode:
+Outline and Solid fill with Purple in dark mode:
 
 <img src="assets/dark-outline.png" alt="Real Zen sidebar with fading Purple one-pixel outlines" width="186"> <img src="assets/dark-fill.png" alt="Real Zen sidebar with fading translucent Purple solid fills" width="186">
 
-## Compatibility
+## Compatibility and limitations
 
-Tested with Zen 1.23b Linux and Sine 2.3.3 in a disposable profile. Native hover,
-selection, tab controls, and tab positions are preserved. No build step or runtime
-dependencies are required. Firefox compatibility is not claimed.
+Tested with Zen 1.23b and Sine 2.3.3 on Linux. Windows, macOS, third-party themes,
+and combinations of dragging, audio, and container controls still need manual
+checks. Firefox compatibility hasn't been tested.
 
-## Known limitations
-
-- Restored recency depends on native session metadata; old background tabs and
-  equal timestamps can be ambiguous.
-- Hidden tabs and collapsed folder members do not consume ranks. Global workspace
-  history can leave gaps in the currently visible trail.
-- Very light or dark custom colors can be faint against a matching sidebar.
-- Windows/macOS, third-party themes, and native drag/audio/container combinations
-  still need manual visual checks. Recency is supplementary to native focus and selection.
+- Restored history depends on Zen's session data, which can't always distinguish
+  old background tabs or recover the order of visits with equal timestamps.
+- Hidden tabs and collapsed folder members don't take up trail slots. Global
+  workspace history can leave gaps in the visible trail when recent tabs are in
+  another workspace.
+- Very light or dark custom colors can be hard to see against a matching sidebar.
 
 ## Development
 
-With Node.js 22+:
+There's no build step or runtime dependency. With Node.js 22+, run:
 
 ```sh
 node --check recent-tab-trail.uc.js
@@ -99,9 +80,9 @@ node --check tools/install-local.mjs
 node --test tests/*.test.cjs
 ```
 
-GitHub Actions runs these checks on Linux with Node 24. Boundary tests do not
-verify browser rendering. See [VERIFICATION.md](VERIFICATION.md) for native behavior,
-preference keys, live browser results, installation details, and manual checks.
+GitHub Actions runs the same checks on Linux with Node 24. The tests use browser
+fixtures, so rendering still needs a check in Zen. See [VERIFICATION.md](VERIFICATION.md)
+for local installation, browser checks, and a few notes on Zen's internals.
 
 ## License
 
